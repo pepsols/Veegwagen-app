@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import MapView from './components/MapView';
 import TrackingPanel from './components/TrackingPanel';
 import SavedRoutes from './components/SavedRoutes';
+import StartMenu from './components/StartMenu';
 import { supabase } from './lib/supabase';
+import { snapToRoad } from './lib/snapToRoad';
 import styles from './App.module.css';
 export default function App() {
     const [center, setCenter] = useState([52.52, 13.405]);
@@ -12,6 +14,7 @@ export default function App() {
     const [distance, setDistance] = useState(0);
     const [duration, setDuration] = useState(0);
     const [durationInterval, setDurationInterval] = useState(null);
+    const [menuMode, setMenuMode] = useState('menu');
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((position) => {
@@ -25,11 +28,12 @@ export default function App() {
     useEffect(() => {
         if (!isTracking)
             return;
-        const watchId = navigator.geolocation.watchPosition((position) => {
+        const watchId = navigator.geolocation.watchPosition(async (position) => {
             const { latitude, longitude } = position.coords;
             const newCoord = [latitude, longitude];
-            setCenter(newCoord);
-            setRouteCoordinates((prev) => [...prev, newCoord]);
+            const snappedCoord = await snapToRoad(newCoord);
+            setCenter(snappedCoord);
+            setRouteCoordinates((prev) => [...prev, snappedCoord]);
         }, (error) => {
             console.log('Geolocation tracking error:', error);
         }, { enableHighAccuracy: true, maximumAge: 0 });
@@ -120,5 +124,29 @@ export default function App() {
         setDuration(route.duration);
         setIsTracking(false);
     };
-    return (_jsxs("div", { className: styles.app, children: [_jsx(MapView, { center: center, routeCoordinates: routeCoordinates, onMapClick: handleMapClick, isTracking: isTracking }), _jsx(TrackingPanel, { isTracking: isTracking, distance: distance, duration: duration, coordinateCount: routeCoordinates.length, onStart: handleStartTracking, onStop: handleStopTracking, onSave: handleSaveRoute, onClear: handleClear }), _jsx(SavedRoutes, { onRouteSelect: handleRouteSelect })] }));
+    const handleMenuRecord = () => {
+        setMenuMode('record');
+        setRouteCoordinates([]);
+        setDistance(0);
+        setDuration(0);
+        setIsTracking(false);
+    };
+    const handleMenuDrive = () => {
+        setMenuMode('drive');
+        setIsTracking(false);
+    };
+    const handleMenuNavigate = () => {
+        setMenuMode('navigate');
+        if (routeCoordinates.length > 0) {
+            setCenter(routeCoordinates[0]);
+        }
+    };
+    const handleBackToMenu = () => {
+        setMenuMode('menu');
+        setIsTracking(false);
+    };
+    if (menuMode === 'menu') {
+        return _jsx(StartMenu, { onRecordRoute: handleMenuRecord, onDriveRoute: handleMenuDrive, onNavigateRoute: handleMenuNavigate });
+    }
+    return (_jsxs("div", { className: styles.app, children: [_jsx(MapView, { center: center, routeCoordinates: routeCoordinates, onMapClick: handleMapClick, isTracking: isTracking }), _jsx(TrackingPanel, { isTracking: isTracking, distance: distance, duration: duration, coordinateCount: routeCoordinates.length, onStart: handleStartTracking, onStop: handleStopTracking, onSave: handleSaveRoute, onClear: handleClear, onBack: handleBackToMenu, mode: menuMode }), menuMode === 'drive' && _jsx(SavedRoutes, { onRouteSelect: handleRouteSelect })] }));
 }

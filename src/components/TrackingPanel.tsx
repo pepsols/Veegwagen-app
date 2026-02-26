@@ -10,6 +10,8 @@ interface TrackingPanelProps {
   onStop: () => void
   onSave: (name: string) => void
   onClear: () => void
+  onBack: () => void
+  mode: 'record' | 'drive' | 'navigate'
 }
 
 export default function TrackingPanel({
@@ -21,6 +23,8 @@ export default function TrackingPanel({
   onStop,
   onSave,
   onClear,
+  onBack,
+  mode,
 }: TrackingPanelProps) {
   const [saveModal, setSaveModal] = useState(false)
   const [routeName, setRouteName] = useState('')
@@ -47,11 +51,24 @@ export default function TrackingPanel({
     return `${Math.round(meters)} m`
   }
 
+  const modeTitle = {
+    record: 'Route opnemen',
+    drive: 'Route rijden',
+    navigate: 'Navigeer naar start',
+  }
+
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h1>VeegRoute</h1>
-        <p className={styles.subtitle}>Route Tracking</p>
+        <button className={styles.backBtn} onClick={onBack} title="Terug naar menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <div>
+          <h1>VeegRoute</h1>
+          <p className={styles.subtitle}>{modeTitle[mode]}</p>
+        </div>
       </div>
 
       <div className={styles.stats}>

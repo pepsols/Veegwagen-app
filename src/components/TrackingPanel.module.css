@@ -12,9 +12,36 @@
 }
 
 .header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 16px;
+}
+
+.backBtn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #1a202c;
+}
+
+.backBtn:hover {
+  background: #e2e8f0;
+  transform: translateX(-2px);
+}
+
+.backBtn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .header h1 {
@@ -22,6 +49,8 @@
   font-weight: 700;
   color: #1a202c;
   margin-bottom: 4px;
+  text-align: center;
+  margin: 0;
 }
 
 .subtitle {
@@ -29,6 +58,8 @@
   color: #64748b;
   font-weight: 500;
   letter-spacing: 0.5px;
+  text-align: center;
+  margin: 0;
 }
 
 .stats {

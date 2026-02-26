@@ -3,7 +3,9 @@ import { LatLngTuple } from 'leaflet'
 import MapView from './components/MapView'
 import TrackingPanel from './components/TrackingPanel'
 import SavedRoutes from './components/SavedRoutes'
+import StartMenu from './components/StartMenu'
 import { supabase, Route } from './lib/supabase'
+import { snapToRoad } from './lib/snapToRoad'
 import styles from './App.module.css'
 
 export default function App() {
@@ -13,6 +15,7 @@ export default function App() {
   const [distance, setDistance] = useState(0)
   const [duration, setDuration] = useState(0)
   const [durationInterval, setDurationInterval] = useState<number | null>(null)
+  const [menuMode, setMenuMode] = useState<'menu' | 'record' | 'drive' | 'navigate'>('menu')
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -32,11 +35,14 @@ export default function App() {
     if (!isTracking) return
 
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords
         const newCoord: LatLngTuple = [latitude, longitude]
-        setCenter(newCoord)
-        setRouteCoordinates((prev) => [...prev, newCoord])
+
+        const snappedCoord = await snapToRoad(newCoord)
+
+        setCenter(snappedCoord)
+        setRouteCoordinates((prev) => [...prev, snappedCoord])
       },
       (error) => {
         console.log('Geolocation tracking error:', error)
@@ -150,6 +156,35 @@ export default function App() {
     setIsTracking(false)
   }
 
+  const handleMenuRecord = () => {
+    setMenuMode('record')
+    setRouteCoordinates([])
+    setDistance(0)
+    setDuration(0)
+    setIsTracking(false)
+  }
+
+  const handleMenuDrive = () => {
+    setMenuMode('drive')
+    setIsTracking(false)
+  }
+
+  const handleMenuNavigate = () => {
+    setMenuMode('navigate')
+    if (routeCoordinates.length > 0) {
+      setCenter(routeCoordinates[0])
+    }
+  }
+
+  const handleBackToMenu = () => {
+    setMenuMode('menu')
+    setIsTracking(false)
+  }
+
+  if (menuMode === 'menu') {
+    return <StartMenu onRecordRoute={handleMenuRecord} onDriveRoute={handleMenuDrive} onNavigateRoute={handleMenuNavigate} />
+  }
+
   return (
     <div className={styles.app}>
       <MapView
@@ -167,8 +202,10 @@ export default function App() {
         onStop={handleStopTracking}
         onSave={handleSaveRoute}
         onClear={handleClear}
+        onBack={handleBackToMenu}
+        mode={menuMode}
       />
-      <SavedRoutes onRouteSelect={handleRouteSelect} />
+      {menuMode === 'drive' && <SavedRoutes onRouteSelect={handleRouteSelect} />}
     </div>
   )
 }
